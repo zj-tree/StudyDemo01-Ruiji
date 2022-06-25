@@ -8,6 +8,8 @@ import com.tree.Entity.Dish;
 import com.tree.Entity.Setmeal;
 import com.tree.Serivice.SetmealService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,6 +78,11 @@ public class SetmealController {
      * @Return: com.tree.Common.R<java.lang.String>
      * @Date: 2022/6/22 14:59
      **/
+
+    // @CacheEvict(value = "SetmealCache",allEntries = true)  //删除所有的缓存数据
+
+    //根据key删除
+    @CacheEvict(value = "SetmealCache",key = "#setmealDto.categoryId+'_1'")
     @PutMapping
     public R<String> update(@RequestBody SetmealDto setmealDto){
         setmealService.updateSetmeal(setmealDto);
@@ -89,6 +96,7 @@ public class SetmealController {
      * @Return: com.tree.Common.R<java.lang.String>
      * @Date: 2022/6/22 15:12
      **/
+    @CacheEvict(value = "SetmealCache",allEntries = true)
     @DeleteMapping
     public R<String> deleteByIds(String ids){
         setmealService.deleteByIds(ids);
@@ -102,6 +110,7 @@ public class SetmealController {
      * @Return: com.tree.Common.R<java.lang.String>
      * @Date: 2022/6/22 15:29
      **/
+    @CacheEvict(value = "SetmealCache",allEntries = true)
     @PostMapping("/status/{type}")
     public R<String> updateStatus(@PathVariable Integer type,String ids){
         setmealService.updateStatus(type,ids);
@@ -109,25 +118,34 @@ public class SetmealController {
     }
 
     /**
-     * @Description TODO:套餐分类展示套餐
+     * @Description TODO:套餐分类展示套餐,spring cache缓存
      * @MethodName:findByCategoryId
      * @Param: [setmeal]
      * @Return: com.tree.Common.R<java.util.List < com.tree.Dto.SetmealDto>>
      * @Date: 2022/6/25 14:42
      **/
     @GetMapping("/list")
-    public R<List<SetmealDto>> findByCategoryId(Setmeal setmeal){
-        String key =  "setmeal_"+setmeal.getCategoryId()+"_"+setmeal.getStatus();
-        List<SetmealDto> byCategoryId = null;
-        byCategoryId = (List<SetmealDto>) redisTemplate.opsForValue().get(key);
-        if (byCategoryId != null){
-            return R.success(byCategoryId);
-        }
-
-        byCategoryId = setmealService.findByCategoryId(setmeal);
-        redisTemplate.opsForValue().set(key,byCategoryId,60, TimeUnit.MINUTES);
+    @Cacheable(value = "SetmealCache",key ="#setmeal.categoryId+'_'+#setmeal.status" )
+    public R<List<SetmealDto>> findByCategoryId(Setmeal setmeal ){
+        List<SetmealDto> byCategoryId = setmealService.findByCategoryId(setmeal);
         return R.success(byCategoryId);
     }
+
+
+    /*原生redis缓存*/
+    // @GetMapping("/list")
+    // public R<List<SetmealDto>> findByCategoryId(Setmeal setmeal){
+    //     String key =  "setmeal_"+setmeal.getCategoryId()+"_"+setmeal.getStatus();
+    //     List<SetmealDto> byCategoryId = null;
+    //     byCategoryId = (List<SetmealDto>) redisTemplate.opsForValue().get(key);
+    //     if (byCategoryId != null){
+    //         return R.success(byCategoryId);
+    //     }
+    //
+    //     byCategoryId = setmealService.findByCategoryId(setmeal);
+    //     redisTemplate.opsForValue().set(key,byCategoryId,60, TimeUnit.MINUTES);
+    //     return R.success(byCategoryId);
+    // }
 
 
 }

@@ -13,8 +13,12 @@ spring:
   servlet:
     multipart:
       max-file-size: 2MB
+  cache:
+    redis:
+#      毫秒,缓存时间
+      time-to-live: 1800000
 
-#      redis链接
+  #      redis链接
   redis:
     host: 192.168.123.178
     port: 6379
