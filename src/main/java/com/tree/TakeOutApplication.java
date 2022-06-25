@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Slf4j
 @SpringBootApplication
 @ServletComponentScan
+//事务管理开启
 @EnableTransactionManagement
 public class TakeOutApplication {
 

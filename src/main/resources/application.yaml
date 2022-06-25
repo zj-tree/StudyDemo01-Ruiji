@@ -13,6 +13,13 @@ spring:
   servlet:
     multipart:
       max-file-size: 2MB
+
+#      redis链接
+  redis:
+    host: 192.168.123.178
+    port: 6379
+    password: Root123
+    database: 0
 mybatis-plus:
 #  驼峰命名,AddressBook --->   address_book
   configuration:
@@ -21,7 +28,6 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: assign_id
-
 uploadPath:
   path: "F:/CodeCount/imageCount/"
 

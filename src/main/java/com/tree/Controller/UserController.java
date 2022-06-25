@@ -7,6 +7,7 @@ import com.tree.Serivice.UserService;
 import com.tree.Utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpSession;
 import javax.xml.ws.soap.Addressing;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Auther: 来两碗米饭
@@ -33,6 +35,9 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private RedisTemplate<Object,Object> redisTemplate;
+
     /**
      * @Description TODO:发送验证码
      * @MethodName:sendMsg
@@ -42,9 +47,11 @@ public class UserController {
      **/
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user, HttpServletRequest request){
-        String phone = ValidateCodeUtils.generateValidateCode(4).toString();
-        request.getSession().setAttribute(user.getPhone(),phone);
-        log.info(phone);
+        String code = ValidateCodeUtils.generateValidateCode(4).toString();
+        // request.getSession().setAttribute(user.getPhone(),phone);
+        //存入code验证码
+        redisTemplate.opsForValue().set(user.getPhone(),code,5, TimeUnit.MINUTES);
+        log.info(code);
         return R.success("获取成功");
     }
 
@@ -53,8 +60,12 @@ public class UserController {
         String phone = map.get("phone");
         String code = map.get("code");
         HttpSession session = request.getSession();
-        String codeAB = (String) session.getAttribute(phone);
+        // String codeAB = (String) session.getAttribute(phone);
+        Object codeAB = redisTemplate.opsForValue().get(phone);
+
+        //判断验证码是否错误
         if (!code.equals(codeAB)) return R.error("验证码错误");
+        //条件生成器
         LambdaQueryWrapper<User> qw = new LambdaQueryWrapper<>();
         qw.eq(User::getPhone,phone);
         User user = userService.getOne(qw);
@@ -65,8 +76,8 @@ public class UserController {
             userService.save(user);
         }
 
-
         session.setAttribute("user",user.getId());
+        redisTemplate.delete(phone);
         log.info(String.valueOf(user.getId()));
         //
         return R.success(user);
