@@ -3,13 +3,40 @@ server:
   servlet:
     register-default-servlet: true
 spring:
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    druid:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://localhost:3306/takeout
-      username: root
-      password: 123456
+#  datasource:
+#    type: com.alibaba.druid.pool.DruidDataSource
+#    druid:
+#      driver-class-name: com.mysql.cj.jdbc.Driver
+#      url: jdbc:mysql://192.168.123.178:3306/takeout?characterEncoding=UTF-8&useSSL=false
+#      username: root
+#      password: 123456
+
+  shardingsphere:
+    datasource:
+      names:
+        master,slave
+      master:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost:3306/takeout
+        username: root
+        password: 123456
+      slave:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.123.178:3306/takeout?characterEncoding=UTF-8&useSSL=false
+        username: root
+        password: 123456
+    masterslave:
+      name: dataSource
+      load-balance-algorithm-type: round_robin
+      master-data-source-name: master
+      slave-data-source-names: slave
+    props:
+      sql:
+        show: true
+
+
   servlet:
     multipart:
       max-file-size: 2MB
@@ -24,6 +51,8 @@ spring:
     port: 6379
     password: Root123
     database: 0
+  main:
+    allow-bean-definition-overriding: true
 mybatis-plus:
 #  驼峰命名,AddressBook --->   address_book
   configuration:
@@ -32,6 +61,7 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: assign_id
+
+#自定义路径
 uploadPath:
   path: "F:/CodeCount/imageCount/"
-
