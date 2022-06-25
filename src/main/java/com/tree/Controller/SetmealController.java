@@ -8,9 +8,11 @@ import com.tree.Entity.Dish;
 import com.tree.Entity.Setmeal;
 import com.tree.Serivice.SetmealService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Auther: 来两碗米饭
@@ -23,6 +25,8 @@ import java.util.List;
 public class SetmealController {
     @Autowired
     private SetmealService setmealService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * @Description TODO:分页数据
@@ -104,10 +108,24 @@ public class SetmealController {
         return R.success("修改成功");
     }
 
-
+    /**
+     * @Description TODO:套餐分类展示套餐
+     * @MethodName:findByCategoryId
+     * @Param: [setmeal]
+     * @Return: com.tree.Common.R<java.util.List < com.tree.Dto.SetmealDto>>
+     * @Date: 2022/6/25 14:42
+     **/
     @GetMapping("/list")
     public R<List<SetmealDto>> findByCategoryId(Setmeal setmeal){
-        List<SetmealDto> byCategoryId = setmealService.findByCategoryId(setmeal);
+        String key =  "setmeal_"+setmeal.getCategoryId()+"_"+setmeal.getStatus();
+        List<SetmealDto> byCategoryId = null;
+        byCategoryId = (List<SetmealDto>) redisTemplate.opsForValue().get(key);
+        if (byCategoryId != null){
+            return R.success(byCategoryId);
+        }
+
+        byCategoryId = setmealService.findByCategoryId(setmeal);
+        redisTemplate.opsForValue().set(key,byCategoryId,60, TimeUnit.MINUTES);
         return R.success(byCategoryId);
     }
 

@@ -72,6 +72,9 @@ public class CategoryController {
 
     @GetMapping("/list")
     public R<List<Category>> findByType(Category category){
+        // String key = "category_"+category.get
+        System.out.println(category);
+
         LambdaQueryWrapper<Category> qw = new LambdaQueryWrapper<>();
         qw.eq(category.getType() != null,Category::getType,category.getType());
         List<Category> list = categoryService.list(qw);

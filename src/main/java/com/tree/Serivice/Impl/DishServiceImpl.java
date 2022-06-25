@@ -10,6 +10,7 @@ import com.tree.Serivice.DishFlavorService;
 import com.tree.Serivice.DishService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,8 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
     @Autowired
     private DishFlavorService dishFlavorService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
     @Override
     @Transactional
     public void saveWithFlavor(DishDto dishDto) {

@@ -12,10 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Update;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +39,8 @@ public class DishController {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
     /**
      * @Description TODO:保存菜品
      * @MethodName:save
@@ -113,6 +118,8 @@ public class DishController {
     @PutMapping
     public R<String> update(@RequestBody DishDto dishDto){
         dishService.updateDishWithFlavor(dishDto);
+        String key = "dish_"+dishDto.getCategoryId()+"_1";
+        redisTemplate.delete(key);
         return R.success("更新成功!");
     }
 
@@ -126,6 +133,8 @@ public class DishController {
     @DeleteMapping
     public R<String> delete(String ids){
         dishService.deleteDishWithFlavor(ids);
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
         return R.success("删除成功");
     }
 
@@ -139,6 +148,8 @@ public class DishController {
     @PostMapping("/status/{status}")
     public R<String> updateStatus(@PathVariable Integer status,String ids){
         dishService.updateStatus(status,ids);
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
         return R.success("状态更新成功");
     }
 
@@ -160,8 +171,16 @@ public class DishController {
 
     @GetMapping("/list")
     public R<List<DishDto>> findByCategoryId(Dish dish){
-        List<DishDto> byCategoryId = dishService.findByCategoryId(dish);
-        return R.success(byCategoryId);
+        List<DishDto> dishData = null;
+        String redisKey = "dish_"+dish.getCategoryId()+"_"+dish.getStatus();
+        dishData = (List<DishDto>)redisTemplate.opsForValue().get(redisKey);
+        if (dishData != null){
+            return R.success(dishData);
+        }
+
+        dishData = dishService.findByCategoryId(dish);
+        redisTemplate.opsForValue().set(redisKey,dishData,60, TimeUnit.MINUTES);
+        return R.success(dishData);
     }
 
 
